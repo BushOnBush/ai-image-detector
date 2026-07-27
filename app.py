@@ -402,6 +402,8 @@ with st.sidebar:
         - Real
 
         **Dataset:** [Kaggle – AI vs Real Images](https://www.kaggle.com/datasets/tristanzhang32/ai-generated-images-vs-real-images)
+
+        **Developed By:** [Lucas Huang](https://www.instagram.com/lucashuang09/) and Jibraan Anwar
         """
     )
 
