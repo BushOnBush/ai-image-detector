@@ -145,6 +145,8 @@ st.markdown(
         top: 14px;
         left: 14px;
         z-index: 999999;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 
     [data-testid="stSidebarCollapsedControl"] button {
@@ -153,17 +155,34 @@ st.markdown(
         background: linear-gradient(135deg, #60a5fa, #a78bfa) !important;
         border-radius: 10px !important;
         box-shadow: 0 4px 14px rgba(96, 165, 250, 0.45);
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 
     [data-testid="stSidebarCollapsedControl"] button svg {
         color: #0b0f1a !important;
         fill: #0b0f1a !important;
+        opacity: 1 !important;
     }
 
-    /* Also enlarge the collapse arrow once the sidebar is open, so it
-       stays consistent. */
+    /* Streamlit fades this control based on hover state by default —
+       override so it stays fully visible no matter where the mouse is. */
+    [data-testid="stSidebarCollapsedControl"]:hover,
+    [data-testid="stSidebarCollapsedControl"]:not(:hover) {
+        opacity: 1 !important;
+    }
+
+    /* Also enlarge the collapse arrow once the sidebar is open, and keep
+       it visible regardless of hover, so it stays consistent. */
+    [data-testid="stSidebarCollapseButton"] {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
     [data-testid="stSidebarCollapseButton"] button {
         transform: scale(1.5);
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 
     .block-container {
@@ -362,7 +381,7 @@ with st.sidebar:
     st.write(
         """
         **UCSD ARE 2026 Final Project**
-        
+
         This application uses **transfer learning with ResNet50**
         to classify images as:
 
@@ -485,7 +504,7 @@ st.subheader("📊 Model Performance")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Testing Accuracy", "95.18%")
+    st.metric("Test Accuracy", "95.18%")
 
 with col2:
     st.metric("Validation Loss", "0.1439")
