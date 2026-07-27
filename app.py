@@ -424,10 +424,8 @@ def load_model():
     model.fc = nn.Linear(model.fc.in_features, 2)
 
     model_path = hf_hub_download(
-        repo_id="BushOnBush/ai-vs-real",
-        filename="best_model2.pth",
-        repo_type="model",
-        token=get_hf_token()
+        repo_id="BushOnBush/aiimagedetector",
+        filename="best_model.pth"
     )
 
     model.load_state_dict(torch.load(model_path, map_location=device))
