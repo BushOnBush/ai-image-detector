@@ -107,8 +107,8 @@ with st.sidebar:
         **Architecture:** ResNet50  
         **Framework:** PyTorch  
         **Training:** Transfer Learning  
-        **Classes:** Fake / Real
-        **Dataset:** https://www.kaggle.com/datasets/tristanzhang32/ai-generated-images-vs-real-images
+        **Classes:** Fake / Real  
+        **Dataset:**https://www.kaggle.com/datasets/tristanzhang32/ai-generated-images-vs-real-images
         """
     )
 
