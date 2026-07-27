@@ -43,10 +43,10 @@ st.markdown(
 
     .confidence-card {
 
-        padding: 20px;
+        padding: 15px;
         border-radius: 15px;
         background-color: #1e293b;
-        margin-top: 20px;
+        margin-top: 15px;
 
     }
 
