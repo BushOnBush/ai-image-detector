@@ -375,7 +375,7 @@ with st.sidebar:
         - 30,000 real images
 
 
-        Validation Accuracy: **95.18%**
+        Test Accuracy: **95.18%**
 
         Validation Loss: **0.1439**
         """
@@ -481,7 +481,7 @@ st.subheader("📊 Model Performance")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Validation Accuracy", "95.18%")
+    st.metric("Testing Accuracy", "95.18%")
 
 with col2:
     st.metric("Validation Loss", "0.1439")
