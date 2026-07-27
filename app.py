@@ -30,7 +30,17 @@ st.markdown(
         background: radial-gradient(circle at top, #131b2e 0%, #0b0f1a 65%);
     }
 
-    #MainMenu, footer, header {visibility: hidden;}
+    #MainMenu, footer {visibility: hidden;}
+
+    /* Keep the header bar (it holds the sidebar toggle) but hide the
+       Streamlit "Deploy" button / menu that sits inside it. */
+    header[data-testid="stHeader"] {
+        background: transparent;
+    }
+
+    div[data-testid="stToolbar"] {
+        visibility: hidden;
+    }
 
     .block-container {
         padding-top: 2.5rem;
@@ -43,10 +53,17 @@ st.markdown(
         font-weight: 800;
         text-align: center;
         margin-bottom: 6px;
+        letter-spacing: -1px;
+    }
+
+    /* Gradient is applied only to the text span, not the emoji, so the
+       emoji keeps its native color glyph instead of rendering as a
+       blank tinted box. */
+    .main-title .gradient-text {
         background: linear-gradient(90deg, #60a5fa, #a78bfa 60%, #f472b6);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        letter-spacing: -1px;
+        background-clip: text;
     }
 
     .subtitle {
@@ -179,7 +196,10 @@ st.markdown(
 # HEADER
 # ==========================
 
-st.markdown('<div class="main-title">🖼️ AI Image Detector</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="main-title">🖼️ <span class="gradient-text">AI Image Detector</span></div>',
+    unsafe_allow_html=True
+)
 st.markdown(
     '<div class="subtitle">Detect AI-generated images using a fine-tuned ResNet50 deep learning model.</div>',
     unsafe_allow_html=True
