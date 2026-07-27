@@ -29,27 +29,46 @@ st.markdown(
         font-size: 42px;
         font-weight: 700;
         text-align: center;
+        margin-bottom: 10px;
     }
+
 
     .subtitle {
         text-align: center;
-        color: #666;
+        color: #aaaaaa;
         font-size: 18px;
         margin-bottom: 30px;
     }
 
-    .card {
+
+    .confidence-card {
+
         padding: 20px;
         border-radius: 15px;
-        background-color: #f5f7fb;
-        margin-bottom: 15px;
+        background-color: #1e293b;
+        margin-top: 20px;
+
     }
 
-    .confidence {
-        font-size: 24px;
+
+    .confidence-text {
+
+        font-size: 26px;
         font-weight: bold;
         text-align: center;
+        color: white;
+
     }
+
+
+    .metric-card {
+
+        padding: 15px;
+        border-radius: 12px;
+        background-color: #1e293b;
+
+    }
+
 
     </style>
     """,
@@ -67,8 +86,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
 st.markdown(
-    '<div class="subtitle">A ResNet50 deep learning model for detecting AI-generated images.</div>',
+    '<div class="subtitle">Detect AI-generated images using a fine-tuned ResNet50 deep learning model.</div>',
     unsafe_allow_html=True
 )
 
@@ -87,17 +107,20 @@ with st.sidebar:
         This application uses **transfer learning with ResNet50**
         to classify images as:
 
-        🤖 AI Generated  
+        🤖 AI Generated
+
         📷 Real Image
 
-        The model was trained on **60,000 images**
-        consisting of:
+
+        The model was trained on:
 
         - 30,000 AI-generated images
         - 30,000 real images
 
+
         Validation Accuracy:
         **95.18%**
+
 
         Validation Loss:
         **0.1439**
@@ -108,7 +131,7 @@ with st.sidebar:
     st.divider()
 
 
-    st.header("Model Information")
+    st.header("Model Details")
 
     st.write(
         """
@@ -116,7 +139,7 @@ with st.sidebar:
 
         **Framework:** PyTorch
 
-        **Training Method:** Transfer Learning
+        **Training:** Transfer Learning
 
         **Optimizer:** Adam
 
@@ -176,11 +199,13 @@ def load_model():
     model.to(device)
     model.eval()
 
+
     return model
 
 
 
 with st.spinner("Loading AI detection model..."):
+
     model = load_model()
 
 
@@ -201,6 +226,7 @@ transform = transforms.Compose([
         [0.485,0.456,0.406],
         [0.229,0.224,0.225]
     )
+
 ])
 
 
@@ -213,7 +239,7 @@ classes = [
 
 
 # ==========================
-# PERFORMANCE SECTION
+# MODEL PERFORMANCE
 # ==========================
 
 st.subheader("📊 Model Performance")
@@ -223,6 +249,7 @@ col1, col2, col3 = st.columns(3)
 
 
 with col1:
+
     st.metric(
         "Validation Accuracy",
         "95.18%"
@@ -230,6 +257,7 @@ with col1:
 
 
 with col2:
+
     st.metric(
         "Validation Loss",
         "0.1439"
@@ -237,8 +265,9 @@ with col2:
 
 
 with col3:
+
     st.metric(
-        "Architecture",
+        "Model",
         "ResNet50"
     )
 
@@ -249,14 +278,14 @@ st.divider()
 
 
 # ==========================
-# UPLOAD
+# IMAGE UPLOAD
 # ==========================
 
-st.subheader("🔍 Analyze an Image")
+st.subheader("🔍 Upload Image")
 
 
 uploaded_file = st.file_uploader(
-    "Upload an image",
+    "Choose an image",
     type=[
         "png",
         "jpg",
@@ -300,6 +329,10 @@ if uploaded_file:
 
 
 
+    # ==========================
+    # PREDICTION
+    # ==========================
+
     with torch.no_grad():
 
         output = model(
@@ -331,8 +364,8 @@ if uploaded_file:
 
     st.divider()
 
-
     st.subheader("Prediction")
+
 
 
     if prediction.item() == 0:
@@ -356,10 +389,12 @@ if uploaded_file:
 
     st.markdown(
         f"""
-        <div class="card">
+        <div class="confidence-card">
 
-        <div class="confidence">
+        <div class="confidence-text">
+
         Confidence: {confidence*100:.2f}%
+
         </div>
 
         </div>
@@ -368,8 +403,6 @@ if uploaded_file:
     )
 
 
-
-    # Confidence explanation
 
     if confidence > 0.9:
 
@@ -380,35 +413,14 @@ if uploaded_file:
     elif confidence > 0.7:
 
         st.warning(
-            "The model is moderately confident. Results may vary on unfamiliar images."
+            "The model is moderately confident in this prediction."
         )
 
     else:
 
         st.warning(
-            "The model is uncertain. Consider testing with another image."
+            "The model is uncertain. Try another image."
         )
-
-
-
-# ==========================
-# FUTURE FEATURES
-# ==========================
-
-st.divider()
-
-st.subheader("🚀 Future Improvements")
-
-st.write(
-    """
-    Planned improvements:
-
-    - Grad-CAM visualization to show which regions influenced predictions
-    - Larger and more diverse datasets
-    - Comparison with Vision Transformer models
-    - Detection of specific AI image generators
-    """
-)
 
 
 
@@ -417,6 +429,7 @@ st.write(
 # ==========================
 
 st.divider()
+
 
 st.caption(
     "Built with PyTorch • ResNet50 • Streamlit • Hugging Face"
