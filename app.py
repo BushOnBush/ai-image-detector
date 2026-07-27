@@ -1,9 +1,13 @@
+import io
+import uuid
+from datetime import datetime, timezone
+
 import streamlit as st
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, HfApi
 
 
 # ==========================
@@ -16,6 +20,97 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded"
 )
+
+
+# ==========================
+# FEEDBACK STORAGE (Hugging Face dataset)
+# ==========================
+# Every "Correct" / "Incorrect" click uploads the image + the true label to
+# this dataset repo, alongside metadata.csv. This is a *data collection*
+# step only — it does not retrain the model. Periodically download this
+# dataset, mix it into your training set, and re-run training to produce a
+# new best_model.pth, then upload that to update the live model.
+#
+# Setup required:
+#   1. Create a new dataset repo on huggingface.co, e.g.
+#      "BushOnBush/aiimagedetector-feedback" (set repo type to "Dataset").
+#   2. Create a HF access token with WRITE permission.
+#   3. In Streamlit Cloud → App settings → Secrets, add:
+#        HF_TOKEN = "hf_xxxxxxxxxxxxxxxxxxxx"
+
+FEEDBACK_REPO_ID = "BushOnBush/aiimagedetector-feedback"
+FEEDBACK_METADATA_FILE = "metadata.csv"
+
+
+def get_hf_token():
+    try:
+        return st.secrets.get("HF_TOKEN")
+    except Exception:
+        return None
+
+
+def submit_feedback(image, predicted_label, confidence_pct, correct_label):
+    """Uploads the image and appends a row to metadata.csv in the feedback
+    dataset repo. Returns True on success, False otherwise."""
+
+    token = get_hf_token()
+
+    if not token:
+        st.error(
+            "Feedback storage isn't configured yet — add an HF_TOKEN "
+            "with write access to this app's Streamlit secrets."
+        )
+        return False
+
+    api = HfApi(token=token)
+
+    feedback_id = uuid.uuid4().hex[:12]
+    timestamp = datetime.now(timezone.utc).isoformat()
+    image_path_in_repo = f"images/{feedback_id}.png"
+
+    try:
+        img_buffer = io.BytesIO()
+        image.save(img_buffer, format="PNG")
+        img_buffer.seek(0)
+
+        api.upload_file(
+            path_or_fileobj=img_buffer,
+            path_in_repo=image_path_in_repo,
+            repo_id=FEEDBACK_REPO_ID,
+            repo_type="dataset",
+            token=token,
+        )
+
+        header = "feedback_id,timestamp,predicted_label,confidence_pct,correct_label,image_path\n"
+
+        try:
+            existing_path = hf_hub_download(
+                repo_id=FEEDBACK_REPO_ID,
+                repo_type="dataset",
+                filename=FEEDBACK_METADATA_FILE,
+                token=token,
+            )
+            with open(existing_path, "r", encoding="utf-8") as f:
+                existing_content = f.read()
+        except Exception:
+            existing_content = header
+
+        new_row = f"{feedback_id},{timestamp},{predicted_label},{confidence_pct:.2f},{correct_label},{image_path_in_repo}\n"
+        updated_content = existing_content + new_row
+
+        api.upload_file(
+            path_or_fileobj=io.BytesIO(updated_content.encode("utf-8")),
+            path_in_repo=FEEDBACK_METADATA_FILE,
+            repo_id=FEEDBACK_REPO_ID,
+            repo_type="dataset",
+            token=token,
+        )
+
+        return True
+
+    except Exception as e:
+        st.error(f"Couldn't save feedback: {e}")
+        return False
 
 
 # ==========================
@@ -213,6 +308,27 @@ st.markdown(
     h3 {
         color: #e2e8f0 !important;
         font-weight: 700 !important;
+    }
+
+    /* ---------- Feedback ---------- */
+    .feedback-heading {
+        text-align: center;
+        font-size: 15px;
+        font-weight: 600;
+        color: #cbd5e1;
+        margin: 24px 0 12px;
+    }
+
+    div[data-testid="stButton"] button {
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: linear-gradient(155deg, #1a2438 0%, #141c2e 100%);
+        color: #e2e8f0;
+        font-weight: 600;
+    }
+
+    div[data-testid="stButton"] button:hover {
+        border-color: rgba(148, 163, 184, 0.5);
     }
 
     </style>
@@ -444,6 +560,56 @@ if uploaded_file:
         """,
         unsafe_allow_html=True
     )
+
+    # ==========================
+    # FEEDBACK
+    # ==========================
+
+    feedback_key = f"feedback_state_{uploaded_file.file_id}"
+    submitted_key = f"feedback_submitted_{uploaded_file.file_id}"
+
+    if feedback_key not in st.session_state:
+        st.session_state[feedback_key] = None
+    if submitted_key not in st.session_state:
+        st.session_state[submitted_key] = False
+
+    if st.session_state[submitted_key]:
+        st.markdown(
+            '<div class="note-pill">🙏 Thanks — your feedback was saved and will help retrain the model.</div>',
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown('<div class="feedback-heading">Was this prediction correct?</div>', unsafe_allow_html=True)
+
+        fb_col1, fb_col2 = st.columns(2)
+
+        with fb_col1:
+            if st.button("✅ Correct", use_container_width=True, key=f"correct_btn_{uploaded_file.file_id}"):
+                st.session_state[feedback_key] = "correct"
+
+        with fb_col2:
+            if st.button("❌ Incorrect", use_container_width=True, key=f"incorrect_btn_{uploaded_file.file_id}"):
+                st.session_state[feedback_key] = "incorrect"
+
+        if st.session_state[feedback_key] == "correct":
+            with st.spinner("Saving feedback..."):
+                if submit_feedback(image, label_text, confidence_pct, label_text):
+                    st.session_state[submitted_key] = True
+                    st.rerun()
+
+        elif st.session_state[feedback_key] == "incorrect":
+            corrected_label = st.radio(
+                "What's the actual label?",
+                classes,
+                horizontal=True,
+                key=f"correction_{uploaded_file.file_id}"
+            )
+
+            if st.button("Submit correction", key=f"submit_correction_{uploaded_file.file_id}"):
+                with st.spinner("Saving feedback..."):
+                    if submit_feedback(image, label_text, confidence_pct, corrected_label):
+                        st.session_state[submitted_key] = True
+                        st.rerun()
 
 
 # ==========================
