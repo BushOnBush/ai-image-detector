@@ -24,29 +24,43 @@ st.set_page_config(
 @st.cache_resource
 def load_model():
 
-    model = models.resnet18(weights=None)
-
-    # Two classes:
-    # 0 = Real
-    # 1 = AI Generated
-    model.fc = nn.Linear(
-        model.fc.in_features,
-        2
-    )
-
-
     model_path = hf_hub_download(
         repo_id="BushOnBush/aiimagedetector",
         filename="best_model.pth"
     )
 
 
-    model.load_state_dict(
-        torch.load(
-            model_path,
-            map_location=torch.device("cpu")
-        )
+    checkpoint = torch.load(
+        model_path,
+        map_location=torch.device("cpu")
     )
+
+
+    # Case 1:
+    # Entire model was saved
+    if isinstance(checkpoint, torch.nn.Module):
+
+        model = checkpoint
+
+
+    # Case 2:
+    # Only weights were saved
+    else:
+
+        model = models.resnet18(
+            weights=None
+        )
+
+
+        model.fc = nn.Linear(
+            model.fc.in_features,
+            2
+        )
+
+
+        model.load_state_dict(
+            checkpoint
+        )
 
 
     model.eval()
@@ -60,44 +74,51 @@ model = load_model()
 
 
 # ==========================
-# IMAGE PREPROCESSING
+# IMAGE TRANSFORM
 # ==========================
 
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+
+    transforms.Resize(
+        (224,224)
+    ),
 
     transforms.ToTensor(),
 
     transforms.Normalize(
+
         mean=[
             0.485,
             0.456,
             0.406
         ],
+
         std=[
             0.229,
             0.224,
             0.225
         ]
+
     )
+
 ])
 
 
 
 # ==========================
-# PREDICTION FUNCTION
+# PREDICTION
 # ==========================
 
 def predict(image):
 
-    image_tensor = transform(image)
+    image = transform(image)
 
-    image_tensor = image_tensor.unsqueeze(0)
+    image = image.unsqueeze(0)
 
 
     with torch.no_grad():
 
-        output = model(image_tensor)
+        output = model(image)
 
 
         probabilities = torch.softmax(
@@ -106,7 +127,7 @@ def predict(image):
         )
 
 
-        confidence, predicted = torch.max(
+        confidence, prediction = torch.max(
             probabilities,
             dim=1
         )
@@ -115,10 +136,13 @@ def predict(image):
     confidence = confidence.item() * 100
 
 
-    if predicted.item() == 1:
+    # Change this if your labels were reversed
+    if prediction.item() == 1:
+
         result = "AI Generated"
 
     else:
+
         result = "Real Image"
 
 
@@ -127,14 +151,16 @@ def predict(image):
 
 
 # ==========================
-# APP UI
+# USER INTERFACE
 # ==========================
 
+st.title(
+    "🖼️ AI Image Detector"
+)
 
-st.title("🖼️ AI Image Detector")
 
 st.write(
-    "Upload an image to determine whether it is AI-generated or real."
+    "Upload an image and the model will predict whether it is AI-generated or real."
 )
 
 
@@ -143,7 +169,7 @@ st.divider()
 
 
 uploaded_file = st.file_uploader(
-    "Choose an image",
+    "Upload an image",
     type=[
         "png",
         "jpg",
@@ -154,12 +180,14 @@ uploaded_file = st.file_uploader(
 
 
 
-if uploaded_file is not None:
+if uploaded_file:
 
 
     image = Image.open(
         uploaded_file
-    ).convert("RGB")
+    ).convert(
+        "RGB"
+    )
 
 
     st.image(
@@ -172,9 +200,14 @@ if uploaded_file is not None:
     st.divider()
 
 
-    with st.spinner("Analyzing image..."):
 
-        prediction, confidence = predict(image)
+    with st.spinner(
+        "Analyzing image..."
+    ):
+
+        prediction, confidence = predict(
+            image
+        )
 
 
 
@@ -182,7 +215,9 @@ if uploaded_file is not None:
     # PREDICTION BOX
     # ==========================
 
-    st.subheader("Prediction")
+    st.subheader(
+        "Prediction"
+    )
 
 
     if prediction == "AI Generated":
@@ -203,7 +238,9 @@ if uploaded_file is not None:
     # CONFIDENCE BOX
     # ==========================
 
-    st.subheader("Confidence")
+    st.subheader(
+        "Confidence"
+    )
 
 
     st.info(
@@ -212,5 +249,5 @@ if uploaded_file is not None:
 
 
     st.caption(
-        "Higher confidence means the model is more certain about its prediction."
+        "Confidence indicates how certain the model is about its prediction."
     )
