@@ -108,7 +108,7 @@ with st.sidebar:
         **Framework:** PyTorch  
         **Training:** Transfer Learning  
         **Classes:** Fake / Real  
-        **Dataset:**https://www.kaggle.com/datasets/tristanzhang32/ai-generated-images-vs-real-images
+        **Dataset:** https://www.kaggle.com/datasets/tristanzhang32/ai-generated-images-vs-real-images
         """
     )
 
