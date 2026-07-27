@@ -15,7 +15,6 @@ st.set_page_config(
     page_icon="🖼️"
 )
 
-
 st.title("🖼️ AI Image Detector")
 st.write(
     "Upload an image and the ResNet50 model will predict "
@@ -47,21 +46,23 @@ def load_model():
     )
 
 
-    # Same classifier as training
+    # Match training classifier
+    # model.fc = nn.Linear(model.fc.in_features, 2)
+
     model.fc = nn.Linear(
         model.fc.in_features,
         2
     )
 
 
-    # Download model from Hugging Face
+    # Download trained weights
     model_path = hf_hub_download(
         repo_id="BushOnBush/aiimagedetector",
-        filename="model.pth"
+        filename="best_model.pth"
     )
 
 
-    # Load trained weights
+    # Load weights
     model.load_state_dict(
         torch.load(
             model_path,
@@ -84,10 +85,11 @@ with st.spinner("Loading AI model..."):
 
 
 # ==========================
-# IMAGE PREPROCESSING
+# IMAGE TRANSFORMATION
 # ==========================
 
 transform = transforms.Compose([
+
     transforms.Resize(
         (224, 224)
     ),
@@ -115,7 +117,7 @@ transform = transforms.Compose([
 # CLASS LABELS
 # ==========================
 
-# Dataset mapping:
+# From training:
 # {'fake': 0, 'real': 1}
 
 classes = [
@@ -154,13 +156,13 @@ if uploaded_file is not None:
     )
 
 
-    # Convert image
+    # Convert image to RGB
     image = image.convert(
         "RGB"
     )
 
 
-    # Apply preprocessing
+    # Preprocess
     img = transform(
         image
     )
@@ -199,11 +201,9 @@ if uploaded_file is not None:
         )
 
 
-
-    predicted_label = classes[
+    predicted_class = classes[
         prediction.item()
     ]
-
 
     confidence = confidence.item() * 100
 
@@ -215,14 +215,17 @@ if uploaded_file is not None:
 
     st.subheader("Prediction")
 
+
     if prediction.item() == 0:
+
         st.error(
-            f"🤖 {predicted_label}"
+            f"🤖 {predicted_class}"
         )
 
     else:
+
         st.success(
-            f"✅ {predicted_label}"
+            f"✅ {predicted_class}"
         )
 
 
