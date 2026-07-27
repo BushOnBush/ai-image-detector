@@ -428,7 +428,19 @@ def load_model():
         filename="best_model2.pth"
     )
 
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    checkpoint = torch.load(model_path, map_location=device)
+
+    # Checkpoints saved with early stopping / training metadata (e.g. via
+    # torch.save({"model_state_dict": ..., "optimizer_state_dict": ...}, ...))
+    # come back as a dict wrapping the actual weights, rather than the raw
+    # state dict itself. Unwrap it if that's the shape we got; otherwise
+    # assume it's already a plain state dict.
+    if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+        state_dict = checkpoint["model_state_dict"]
+    else:
+        state_dict = checkpoint
+
+    model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
 
