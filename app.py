@@ -424,7 +424,7 @@ with st.sidebar:
 
         **Dataset:** [Kaggle – AI vs Real Images](https://www.kaggle.com/datasets/tristanzhang32/ai-generated-images-vs-real-images)
 
-        **Developed By:** [Lucas Huang](https://www.instagram.com/lucashuang09/) and [Jibraan Anwar](jibraan.a.anwar@gmail.com)
+        **Developed By:** [Lucas Huang](https://www.instagram.com/lucashuang09/) and [Jibraan Anwar](mailto:jibraan.a.anwar@gmail.com)
         """
     )
 
