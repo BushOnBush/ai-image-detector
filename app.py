@@ -12,14 +12,107 @@ from huggingface_hub import hf_hub_download
 
 st.set_page_config(
     page_title="AI Image Detector",
-    page_icon="🖼️"
+    page_icon="🖼️",
+    layout="centered"
 )
 
-st.title("🖼️ AI Image Detector")
-st.write(
-    "Upload an image and the ResNet50 model will predict "
-    "whether it is AI-generated or real."
+
+# ==========================
+# CUSTOM CSS
+# ==========================
+
+st.markdown(
+    """
+    <style>
+
+    .main-title {
+        font-size: 42px;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #666;
+        font-size: 18px;
+        margin-bottom: 30px;
+    }
+
+    .result-card {
+        padding: 25px;
+        border-radius: 15px;
+        text-align: center;
+        background-color: #f5f7fb;
+        margin-top: 20px;
+    }
+
+    .confidence {
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .info-box {
+        padding: 15px;
+        border-radius: 10px;
+        background-color: #f0f2f6;
+        margin-bottom: 10px;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
 )
+
+
+
+# ==========================
+# HEADER
+# ==========================
+
+st.markdown(
+    '<div class="main-title">🖼️ AI Image Detector</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="subtitle">Detect whether an image was created by AI using a fine-tuned ResNet50 deep learning model.</div>',
+    unsafe_allow_html=True
+)
+
+
+
+# ==========================
+# SIDEBAR
+# ==========================
+
+with st.sidebar:
+
+    st.header("About")
+
+    st.write(
+        """
+        This application uses transfer learning with
+        **ResNet50** to classify images as:
+
+        🤖 AI Generated  
+        📷 Real Image
+        """
+    )
+
+
+    st.divider()
+
+    st.write("### Model Details")
+
+    st.write(
+        """
+        **Architecture:** ResNet50  
+        **Framework:** PyTorch  
+        **Training:** Transfer Learning  
+        **Classes:** Fake / Real  
+        """
+    )
 
 
 
@@ -40,14 +133,9 @@ device = torch.device(
 @st.cache_resource
 def load_model():
 
-    # Create ResNet50
     model = models.resnet50(
         weights=None
     )
-
-
-    # Match training classifier
-    # model.fc = nn.Linear(model.fc.in_features, 2)
 
     model.fc = nn.Linear(
         model.fc.in_features,
@@ -55,14 +143,12 @@ def load_model():
     )
 
 
-    # Download trained weights
     model_path = hf_hub_download(
         repo_id="BushOnBush/aiimagedetector",
         filename="best_model.pth"
     )
 
 
-    # Load weights
     model.load_state_dict(
         torch.load(
             model_path,
@@ -74,51 +160,34 @@ def load_model():
     model.to(device)
     model.eval()
 
-
     return model
 
 
 
-with st.spinner("Loading AI model..."):
+with st.spinner("Loading AI detection model..."):
     model = load_model()
 
 
 
 # ==========================
-# IMAGE TRANSFORMATION
+# TRANSFORM
 # ==========================
 
 transform = transforms.Compose([
 
     transforms.Resize(
-        (224, 224)
+        (224,224)
     ),
 
     transforms.ToTensor(),
 
     transforms.Normalize(
-        mean=[
-            0.485,
-            0.456,
-            0.406
-        ],
-
-        std=[
-            0.229,
-            0.224,
-            0.225
-        ]
+        [0.485,0.456,0.406],
+        [0.229,0.224,0.225]
     )
 ])
 
 
-
-# ==========================
-# CLASS LABELS
-# ==========================
-
-# From training:
-# {'fake': 0, 'real': 1}
 
 classes = [
     "AI Generated Image",
@@ -128,21 +197,24 @@ classes = [
 
 
 # ==========================
-# IMAGE UPLOAD
+# UPLOAD
 # ==========================
 
+st.subheader("Upload Image")
+
 uploaded_file = st.file_uploader(
-    "Upload an image",
+    "",
     type=[
+        "png",
         "jpg",
-        "jpeg",
-        "png"
+        "jpeg"
     ]
 )
 
 
 
-if uploaded_file is not None:
+if uploaded_file:
+
 
     image = Image.open(
         uploaded_file
@@ -156,44 +228,25 @@ if uploaded_file is not None:
     )
 
 
-    # Convert image to RGB
-    image = image.convert(
-        "RGB"
-    )
+    image = image.convert("RGB")
 
 
-    # Preprocess
-    img = transform(
-        image
-    )
+    tensor = transform(image)
+
+    tensor = tensor.unsqueeze(0)
+
+    tensor = tensor.to(device)
 
 
-    # Add batch dimension
-    img = img.unsqueeze(
-        0
-    )
-
-
-    img = img.to(device)
-
-
-
-    # ==========================
-    # PREDICTION
-    # ==========================
 
     with torch.no_grad():
 
-        output = model(
-            img
-        )
-
+        output = model(tensor)
 
         probabilities = torch.softmax(
             output,
             dim=1
         )
-
 
         confidence, prediction = torch.max(
             probabilities,
@@ -201,17 +254,16 @@ if uploaded_file is not None:
         )
 
 
-    predicted_class = classes[
+
+    label = classes[
         prediction.item()
     ]
 
-    confidence = confidence.item() * 100
+    confidence = confidence.item()
 
 
 
-    # ==========================
-    # DISPLAY RESULT
-    # ==========================
+    st.divider()
 
     st.subheader("Prediction")
 
@@ -219,16 +271,42 @@ if uploaded_file is not None:
     if prediction.item() == 0:
 
         st.error(
-            f"🤖 {predicted_class}"
+            "🤖 AI Generated Image"
         )
 
     else:
 
         st.success(
-            f"✅ {predicted_class}"
+            "📷 Real Image"
         )
 
 
-    st.write(
-        f"Confidence: {confidence:.2f}%"
+    st.progress(
+        float(confidence)
     )
+
+
+    st.markdown(
+        f"""
+        <div class="result-card">
+
+        <div class="confidence">
+        Confidence: {confidence*100:.2f}%
+        </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+
+# ==========================
+# FOOTER
+# ==========================
+
+st.divider()
+
+st.caption(
+    "Built with PyTorch • ResNet50 • Streamlit • Hugging Face"
+)
