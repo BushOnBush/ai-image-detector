@@ -421,7 +421,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def load_model():
 
     model = models.resnet50(weights=None)
-    model.fc = nn.Linear(model.fc.in_features, 2)
+    # This checkpoint's head is an nn.Sequential (index 0 = Dropout, index 1 =
+    # Linear) rather than a bare nn.Linear — that's why the state dict has
+    # "fc.1.weight"/"fc.1.bias" instead of "fc.weight"/"fc.bias". Dropout has
+    # no learnable parameters, so its exact probability doesn't affect
+    # loading, and eval() mode disables it anyway.
+    model.fc = nn.Sequential(
+        nn.Dropout(0.5),
+        nn.Linear(model.fc.in_features, 2)
+    )
 
     model_path = hf_hub_download(
         repo_id="BushOnBush/aiimagedetector2",
