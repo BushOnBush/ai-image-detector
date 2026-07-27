@@ -93,10 +93,7 @@ with st.sidebar:
     st.write(
         """
         This application uses transfer learning with
-        **ResNet50** to classify images as:
-
-        🤖 AI Generated  
-        📷 Real Image
+        **ResNet50** to classify images as AI generated or real. The model was trained on a dataset consisting of 60,000 images, with 30,000 AI generated images and 30,000 real images. The model achieved an accuracy of **96%** on the validation set.
         """
     )
 
@@ -110,7 +107,8 @@ with st.sidebar:
         **Architecture:** ResNet50  
         **Framework:** PyTorch  
         **Training:** Transfer Learning  
-        **Classes:** Fake / Real  
+        **Classes:** Fake / Real
+        **Dataset:** https://www.kaggle.com/datasets/tristanzhang32/ai-generated-images-vs-real-images
         """
     )
 
