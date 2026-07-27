@@ -148,6 +148,8 @@ with st.sidebar:
         **Classes:**
         - Fake
         - Real
+
+        **Dataset:** https://www.kaggle.com/datasets/tristanzhang32/ai-generated-images-vs-real-images
         """
     )
 
