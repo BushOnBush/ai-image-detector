@@ -361,7 +361,7 @@ with st.sidebar:
 
     st.write(
         """
-        **ARE 2026 Final Project**
+        **UCSD ARE 2026 Final Project**
         
         This application uses **transfer learning with ResNet50**
         to classify images as:
