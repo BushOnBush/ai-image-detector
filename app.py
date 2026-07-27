@@ -13,7 +13,8 @@ from huggingface_hub import hf_hub_download
 st.set_page_config(
     page_title="AI Image Detector",
     page_icon="🖼️",
-    layout="centered"
+    layout="centered",
+    initial_sidebar_state="expanded"
 )
 
 
@@ -32,14 +33,42 @@ st.markdown(
 
     #MainMenu, footer {visibility: hidden;}
 
-    /* Keep the header bar (it holds the sidebar toggle) but hide the
-       Streamlit "Deploy" button / menu that sits inside it. */
     header[data-testid="stHeader"] {
         background: transparent;
     }
 
-    div[data-testid="stToolbar"] {
-        visibility: hidden;
+    /* Hide only the "Deploy" button, not the whole toolbar — the
+       toolbar also contains the sidebar expand arrow, and hiding it
+       entirely was hiding that arrow too. */
+    button[data-testid="stAppDeployButton"],
+    div[data-testid="stAppDeployButton"] {
+        display: none;
+    }
+
+    /* Make the sidebar expand arrow big, obvious, and easy to spot. */
+    [data-testid="stSidebarCollapsedControl"] {
+        top: 14px;
+        left: 14px;
+        z-index: 999999;
+    }
+
+    [data-testid="stSidebarCollapsedControl"] button {
+        transform: scale(1.9);
+        transform-origin: top left;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 14px rgba(96, 165, 250, 0.45);
+    }
+
+    [data-testid="stSidebarCollapsedControl"] button svg {
+        color: #0b0f1a !important;
+        fill: #0b0f1a !important;
+    }
+
+    /* Also enlarge the collapse arrow once the sidebar is open, so it
+       stays consistent. */
+    [data-testid="stSidebarCollapseButton"] button {
+        transform: scale(1.5);
     }
 
     .block-container {
